@@ -1,5 +1,5 @@
 # Module Manager
-A simple dynamic library plugin manager and loader. Easily define plugins and load them from a plugin directory.
+A simple dynamic library module manager and loader. Easily define modules and load them from a module directory.
 
 # Dependencies
 * boost
@@ -8,41 +8,41 @@ A simple dynamic library plugin manager and loader. Easily define plugins and lo
 # Example Usage
 main.cpp
 ```cpp
-#include "PluginManager.hpp"
-#include "PluginInterface.hpp"
+#include "ModuleManager/ModuleManager.hpp"
+#include "ModuleInterface.hpp"
 using namespace bradosia;
 
 int main(){
-  PluginManager pluginManagerObj;
-  pluginManagerObj.addPluginInterface<PluginInterface>("pluginName");
-  pluginManagerObj.loadPlugins("plugins_directory");
-  boost::shared_ptr<PluginInterface> plugin = pluginManagerObj.getPlugin<PluginInterface>("pluginName");
-  plugin->testPlugin();
+  ModuleManager moduleManagerObj;
+  moduleManagerObj.addModuleInterface<ModuleInterface>("moduleName");
+  moduleManagerObj.loadModules("modules_directory");
+  boost::shared_ptr<ModuleInterface> module = moduleManagerObj.getModule<ModuleInterface>("moduleName");
+  module->testModule();
 }
 ```
 
-PluginInterface.hpp
+ModuleInterface.hpp
 ```cpp
-class PluginInterface {
+class ModuleInterface {
 public:
-  virtual void testPlugin() = 0;
+  virtual void testModule() = 0;
 };
 ```
 
-plugin.hpp source for "plugins_directory/plugin.dll"
+module.hpp source for "modules_directory/module.dll"
 ```cpp
 #include <boost/config.hpp> // for BOOST_SYMBOL_EXPORT
-#include "pluginInterface.hpp"
+#include "moduleInterface.hpp"
 
-namespace PluginNamespace {
-class PluginClass : public PluginInterface {
-  void testPlugin(){
+namespace ModuleNamespace {
+class ModuleClass : public ModuleInterface {
+  void testModule(){
     printf("Hello World!");
   }
 }
 
-extern "C" BOOST_SYMBOL_EXPORT PluginClass pluginName;
-PluginClass pluginName;
+extern "C" BOOST_SYMBOL_EXPORT ModuleClass moduleName;
+ModuleClass moduleName;
 }
 ```
 
