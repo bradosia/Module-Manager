@@ -1,4 +1,4 @@
-# Plugin Manager
+# Module Manager
 A simple dynamic library plugin manager and loader. Easily define plugins and load them from a plugin directory.
 
 # Dependencies
@@ -44,5 +44,26 @@ class PluginClass : public PluginInterface {
 extern "C" BOOST_SYMBOL_EXPORT PluginClass pluginName;
 PluginClass pluginName;
 }
+```
+
+# Build
+It is recommended in your project directory to place this library folder at `third_party/Module-Manager/`
+
+## Cmake
+
+```cmake
+add_subdirectory(third_party/Module-Manager)
+
+target_include_directories(${YOUR_BINARY} PRIVATE
+  third_party/Module-Manager/include
+)
+
+target_link_directories(${YOUR_BINARY} PRIVATE
+   third_party/Module-Manager/lib
+)
+
+target_link_libraries(${YOUR_BINARY} PRIVATE
+  ModuleManager
+)
 ```
 
