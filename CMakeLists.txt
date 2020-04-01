@@ -5,6 +5,8 @@ project(${project_name} VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(lib_static_name ${project_name})
 
+find_package(Boost 1.56 REQUIRED COMPONENTS
+             system filesystem)
 
 set(SOURCES ${SOURCES}
   src/core/ModuleManager.cpp
