@@ -2,6 +2,7 @@
 /include/
 /lib/
 /bin/
+CMakeLists.txt.user
 
 # Prerequisites
 *.d

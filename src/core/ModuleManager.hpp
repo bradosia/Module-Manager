@@ -20,6 +20,7 @@
 #include "boost/filesystem.hpp"
 #include <boost/dll/import.hpp> // for import_alias
 #include <boost/shared_ptr.hpp>
+#include <boost/signals2.hpp>
 
 namespace bradosia {
 
@@ -38,7 +39,7 @@ public:
   std::string moduleName;
   InterfaceMethodsBase(std::string s) { moduleName = s; }
   ~InterfaceMethodsBase() {}
-  virtual void addPath(boost::filesystem::path lib_path) = 0;
+  virtual int addPath(boost::filesystem::path lib_path) = 0;
 };
 
 template <class T> class InterfaceMethods : public InterfaceMethodsBase {
@@ -46,7 +47,7 @@ public:
   InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {}
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
-  void addPath(boost::filesystem::path lib_path) {
+  int addPath(boost::filesystem::path lib_path) {
     std::cout << "PLUGIN: Loading " << lib_path << "\n";
     boost::shared_ptr<T> module;
     try {
@@ -54,26 +55,36 @@ public:
                                      boost::dll::load_mode::default_mode);
     } catch (...) {
       std::cout << "PLUGIN: Loading FAILED " << lib_path << "\n";
+      return -1;
     }
-    if (module) {
-      std::cout << "PLUGIN: Loading SUCCESS " << lib_path << "\n";
-      modulePtrs.push_back(module);
-    }
+    std::cout << "PLUGIN: Loading SUCCESS " << lib_path << "\n";
+    modulePtrs.push_back(module);
+    return 0;
   }
 };
 
+using moduleSignal =
+    boost::signals2::signal<void(std::shared_ptr<InterfaceMethodsBase>)>;
+
 class ModuleManager {
 private:
-  std::unordered_map<std::string, InterfaceMethodsBase *> interfaceMap;
+  std::unordered_map<std::string, std::shared_ptr<InterfaceMethodsBase>> interfaceMap;
+  std::unordered_map<std::string, std::shared_ptr<moduleSignal>> signalMap;
+  unsigned int modulesLoadedNum = 0;
 
 public:
-  template <class T> void addModuleInterface(std::string moduleName) {
-    InterfaceMethods<T> *interface = new InterfaceMethods<T>(moduleName);
-    InterfaceMethodsBase *interfaceBase = (InterfaceMethodsBase *)interface;
+  boost::signals2::signal<void()> callbackLoadAllSignal;
+
+  template <class T> void addModule(std::string moduleName) {
+    std::shared_ptr<InterfaceMethods<T>> interface = std::make_shared<InterfaceMethods<T>>(moduleName);
+    std::shared_ptr<InterfaceMethodsBase> interfaceBase = std::dynamic_pointer_cast<InterfaceMethodsBase>(interface);
     interfaceMap.insert({moduleName, interface});
+    signalMap.insert({moduleName, std::make_shared<moduleSignal>()});
   }
 
   void loadModules(std::string directoryPathStr) {
+    int rc;
+    std::string moduleName;
     for (auto &p :
          boost::filesystem::recursive_directory_iterator(directoryPathStr)) {
       std::cout << "MODULE: File Found " << p.path() << "\n";
@@ -87,7 +98,20 @@ public:
            pathStr.find(".dylib") != std::string::npos ||
            pathStr.find(".so") != std::string::npos)) {
         for (auto pairs : interfaceMap) {
-          pairs.second->addPath(p.path());
+          moduleName = pairs.first;
+          rc = pairs.second->addPath(p.path());
+          if (rc == 0) {
+            modulesLoadedNum++;
+            std::unordered_map<std::string,
+                               std::shared_ptr<moduleSignal>>::const_iterator
+                got = signalMap.find(moduleName);
+            if (got != signalMap.end()) {
+              (*got->second)(pairs.second);
+            }
+            if (modulesLoadedNum == signalMap.size()) {
+                callbackLoadAllSignal();
+            }
+          }
         }
       }
     }
@@ -100,6 +124,17 @@ public:
       return nullptr;
     }
     return to_std(interface->modulePtrs.front());
+  }
+
+  std::shared_ptr<moduleSignal> getCallbackLoadSignal(std::string moduleName) {
+    std::shared_ptr<moduleSignal> signalReturn;
+    std::unordered_map<std::string,
+                       std::shared_ptr<moduleSignal>>::const_iterator got =
+        signalMap.find(moduleName);
+    if (got != signalMap.end()) {
+      signalReturn = got->second;
+    }
+    return signalReturn;
   }
 };
 
