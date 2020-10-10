@@ -64,7 +64,7 @@ public:
 };
 
 using moduleSignal =
-    boost::signals2::signal<void(std::shared_ptr<InterfaceMethodsBase>)>;
+    boost::signals2::signal<int(std::shared_ptr<InterfaceMethodsBase>)>;
 
 class ModuleManager {
 private:
@@ -73,7 +73,7 @@ private:
   unsigned int modulesLoadedNum = 0;
 
 public:
-  boost::signals2::signal<void()> callbackLoadAllSignal;
+  boost::signals2::signal<int()> callbackLoadAllSignal;
 
   template <class T> void addModule(std::string moduleName) {
     std::shared_ptr<InterfaceMethods<T>> interface = std::make_shared<InterfaceMethods<T>>(moduleName);
