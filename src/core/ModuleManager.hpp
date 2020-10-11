@@ -40,10 +40,14 @@ public:
   InterfaceMethodsBase(std::string s) { moduleName = s; }
   ~InterfaceMethodsBase() {}
   virtual int addPath(boost::filesystem::path lib_path) = 0;
+  virtual int callLoadedSignal() = 0;
 };
 
 template <class T> class InterfaceMethods : public InterfaceMethodsBase {
 public:
+  std::shared_ptr<boost::signals2::signal<int(std::shared_ptr<T>)>>
+      loadedSignal;
+
   InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {}
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
@@ -61,25 +65,29 @@ public:
     modulePtrs.push_back(module);
     return 0;
   }
+  int callLoadedSignal() {
+    (*loadedSignal)(to_std(modulePtrs.front()));
+    return 0;
+  }
 };
-
-using moduleSignal =
-    boost::signals2::signal<int(std::shared_ptr<InterfaceMethodsBase>)>;
 
 class ModuleManager {
 private:
-  std::unordered_map<std::string, std::shared_ptr<InterfaceMethodsBase>> interfaceMap;
-  std::unordered_map<std::string, std::shared_ptr<moduleSignal>> signalMap;
+  std::unordered_map<std::string, std::shared_ptr<InterfaceMethodsBase>>
+      interfaceMap;
   unsigned int modulesLoadedNum = 0;
 
 public:
   boost::signals2::signal<int()> callbackLoadAllSignal;
 
   template <class T> void addModule(std::string moduleName) {
-    std::shared_ptr<InterfaceMethods<T>> interface = std::make_shared<InterfaceMethods<T>>(moduleName);
-    std::shared_ptr<InterfaceMethodsBase> interfaceBase = std::dynamic_pointer_cast<InterfaceMethodsBase>(interface);
+    std::shared_ptr<InterfaceMethods<T>> interface =
+        std::make_shared<InterfaceMethods<T>>(moduleName);
+    std::shared_ptr<InterfaceMethodsBase> interfaceBase =
+        std::dynamic_pointer_cast<InterfaceMethodsBase>(interface);
     interfaceMap.insert({moduleName, interface});
-    signalMap.insert({moduleName, std::make_shared<moduleSignal>()});
+    interface->loadedSignal =
+        std::make_shared<boost::signals2::signal<int(std::shared_ptr<T>)>>();
   }
 
   void loadModules(std::string directoryPathStr) {
@@ -101,15 +109,10 @@ public:
           moduleName = pairs.first;
           rc = pairs.second->addPath(p.path());
           if (rc == 0) {
+            pairs.second->callLoadedSignal();
             modulesLoadedNum++;
-            std::unordered_map<std::string,
-                               std::shared_ptr<moduleSignal>>::const_iterator
-                got = signalMap.find(moduleName);
-            if (got != signalMap.end()) {
-              (*got->second)(pairs.second);
-            }
-            if (modulesLoadedNum == signalMap.size()) {
-                callbackLoadAllSignal();
+            if (modulesLoadedNum == interfaceMap.size()) {
+              callbackLoadAllSignal();
             }
           }
         }
@@ -118,23 +121,22 @@ public:
   }
 
   template <class T> std::shared_ptr<T> getModule(std::string moduleName) {
-    InterfaceMethods<T> *interface =
-        dynamic_cast<InterfaceMethods<T> *>(interfaceMap.at(moduleName));
+    std::shared_ptr<InterfaceMethods<T>> interface =
+        std::dynamic_pointer_cast<std::shared_ptr<InterfaceMethods<T>>>(
+            interfaceMap.at(moduleName));
     if (interface->modulePtrs.empty()) {
       return nullptr;
     }
     return to_std(interface->modulePtrs.front());
   }
 
-  std::shared_ptr<moduleSignal> getCallbackLoadSignal(std::string moduleName) {
-    std::shared_ptr<moduleSignal> signalReturn;
-    std::unordered_map<std::string,
-                       std::shared_ptr<moduleSignal>>::const_iterator got =
-        signalMap.find(moduleName);
-    if (got != signalMap.end()) {
-      signalReturn = got->second;
-    }
-    return signalReturn;
+  template <class T>
+  std::shared_ptr<boost::signals2::signal<int(std::shared_ptr<T>)>>
+  getCallbackLoadSignal(std::string moduleName) {
+    std::shared_ptr<InterfaceMethods<T>> interface =
+        std::dynamic_pointer_cast<InterfaceMethods<T>>(
+            interfaceMap.at(moduleName));
+    return interface->loadedSignal;
   }
 };
 
