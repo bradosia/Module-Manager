@@ -8,7 +8,7 @@ set(lib_static_name ${project_name})
 find_package(Boost 1.56 REQUIRED COMPONENTS
              system filesystem)
 
-set(SOURCES ${SOURCES}
+set(SOURCES
   src/core/ModuleManager.cpp
   src/core/ModuleManager.hpp
 )
