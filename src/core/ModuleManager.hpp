@@ -1,7 +1,7 @@
 /*
  * @name Module Manager
  * @author Branden Lee
- * @version 1.00
+ * @version 1.01
  * @license GNU LGPL v3
  * @brief Manages shared library modules
  */
@@ -48,9 +48,7 @@ public:
   std::shared_ptr<boost::signals2::signal<int(std::shared_ptr<T>)>>
       loadedSignal;
 
-  InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {
-      //loadedSignal = std::make_shared<boost::signals2::signal<int(std::shared_ptr<T>)>>();
-  }
+  InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {}
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
   int addPath(boost::filesystem::path lib_path) {
