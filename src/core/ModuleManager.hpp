@@ -48,7 +48,9 @@ public:
   std::shared_ptr<boost::signals2::signal<int(std::shared_ptr<T>)>>
       loadedSignal;
 
-  InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {}
+  InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {
+      loadedSignal = std::make_shared<boost::signals2::signal<int(std::shared_ptr<T>)>>();
+  }
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
   int addPath(boost::filesystem::path lib_path) {
