@@ -49,7 +49,7 @@ public:
       loadedSignal;
 
   InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {
-      loadedSignal = std::make_shared<boost::signals2::signal<int(std::shared_ptr<T>)>>();
+      //loadedSignal = std::make_shared<boost::signals2::signal<int(std::shared_ptr<T>)>>();
   }
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
