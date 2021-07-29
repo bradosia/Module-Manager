@@ -1,10 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
 set(project_name ModuleManager)
-if(NOT ModuleManager)
-    message( STATUS "Library ${project_name} had already been added!" )
-    return()
-endif()
 project(${project_name} VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(lib_static_name ${project_name})
