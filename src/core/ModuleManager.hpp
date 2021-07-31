@@ -52,16 +52,19 @@ public:
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
   int addPath(boost::filesystem::path lib_path) {
-    std::cout << "PLUGIN: Loading " << lib_path << "\n";
+    std::cout << "MODULE: Loading " << lib_path << "\n";
     boost::shared_ptr<T> module;
     try {
       module = boost::dll::import<T>(lib_path, moduleName,
                                      boost::dll::load_mode::default_mode);
+    } catch (const std::exception &e) {
+      std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
+      std::cout << e.what() << "\n";
     } catch (...) {
-      std::cout << "PLUGIN: Loading FAILED " << lib_path << "\n";
+      std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
       return -1;
     }
-    std::cout << "PLUGIN: Loading SUCCESS " << lib_path << "\n";
+    std::cout << "MODULE: Loading SUCCESS " << lib_path << "\n";
     modulePtrs.push_back(module);
     return 0;
   }
