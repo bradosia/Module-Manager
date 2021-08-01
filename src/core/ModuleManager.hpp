@@ -9,14 +9,15 @@
 #ifndef BRADOSIA_MODULE_MANAGER_H
 #define BRADOSIA_MODULE_MANAGER_H
 
-// c++17
-#include <filesystem>
+// c++
 #include <iostream>
 #include <memory>
 #include <string>
 
-/* boost
+/* boost 1.72.0
+ * License: Boost Software License (similar to BSD and MIT)
  */
+#include "boost/filesystem.hpp"
 #include <boost/dll/import.hpp> // for import_alias
 #include <boost/shared_ptr.hpp>
 #include <boost/signals2.hpp>
@@ -38,12 +39,8 @@ public:
   std::string moduleName;
   InterfaceMethodsBase(std::string s) { moduleName = s; }
   ~InterfaceMethodsBase() {}
-<<<<<<< HEAD
   virtual int addPath(boost::filesystem::path lib_path) = 0;
   virtual int callLoadedSignal() = 0;
-=======
-  virtual void addPath(std::filesystem::path p) = 0;
->>>>>>> parent of 1dfb7ef... module manager
 };
 
 template <class T> class InterfaceMethods : public InterfaceMethodsBase {
@@ -54,14 +51,8 @@ public:
   InterfaceMethods(std::string s) : InterfaceMethodsBase(s) {}
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
-<<<<<<< HEAD
   int addPath(boost::filesystem::path lib_path) {
     std::cout << "MODULE: Loading " << lib_path << "\n";
-=======
-  void addPath(std::filesystem::path p) {
-    boost::filesystem::path lib_path(p.string().c_str());
-    std::cout << "PLUGIN: Loading " << p << "\n";
->>>>>>> parent of 1dfb7ef... module manager
     boost::shared_ptr<T> module;
     try {
       module = boost::dll::import<T>(lib_path, moduleName,
@@ -70,16 +61,8 @@ public:
       std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
       std::cout << e.what() << "\n";
     } catch (...) {
-<<<<<<< HEAD
       std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
       return -1;
-=======
-      std::cout << "PLUGIN: Loading FAILED " << p << "\n";
-    }
-    if (module) {
-      std::cout << "PLUGIN: Loading SUCCESS " << p << "\n";
-      modulePtrs.push_back(module);
->>>>>>> parent of 1dfb7ef... module manager
     }
     std::cout << "MODULE: Loading SUCCESS " << lib_path << "\n";
     modulePtrs.push_back(module);
@@ -114,11 +97,17 @@ public:
     int rc;
     std::string moduleName;
     for (auto &p :
-         std::filesystem::recursive_directory_iterator(directoryPathStr)) {
-      std::cout << "PLUGIN: File Found " << p.path() << "\n";
-      if (p.is_regular_file() &&
-          (p.path().extension() == ".dll" || p.path().extension() == ".dylib" ||
-           p.path().extension() == ".so")) {
+         boost::filesystem::recursive_directory_iterator(directoryPathStr)) {
+      std::cout << "MODULE: File Found " << p.path() << "\n";
+      std::cout << "path extension " << p.path().extension().string() << "\n";
+      std::string pathStr = p.path().string();
+      /* On linux the dynamic library extensions are libMyLibrary.so.1.0.0
+       * Thus, we use find instead of substr matching
+       */
+      if (boost::filesystem::is_regular_file(p) &&
+          (pathStr.find(".dll") != std::string::npos ||
+           pathStr.find(".dylib") != std::string::npos ||
+           pathStr.find(".so") != std::string::npos)) {
         for (auto pairs : interfaceMap) {
           moduleName = pairs.first;
           rc = pairs.second->addPath(p.path());
