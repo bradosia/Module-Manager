@@ -68,8 +68,7 @@ public:
                                      boost::dll::load_mode::default_mode);
     } catch (const std::exception &e) {
       std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
-      std::cout << "WHY: " << e.what() << "\n";
-      return -1;
+      std::cout << e.what() << "\n";
     } catch (...) {
 <<<<<<< HEAD
       std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
