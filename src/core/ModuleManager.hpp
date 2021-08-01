@@ -52,7 +52,7 @@ public:
   ~InterfaceMethods() {}
   std::vector<boost::shared_ptr<T>> modulePtrs;
   int addPath(boost::filesystem::path lib_path) {
-    std::cout << "MODULE: Loading " << lib_path << "\n";
+    std::cout << "MODULE: Loading " << moduleName << " with Path: " << lib_path << "\n";
     boost::shared_ptr<T> module;
     try {
       module = boost::dll::import<T>(lib_path, moduleName,
