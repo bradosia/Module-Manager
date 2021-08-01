@@ -60,6 +60,7 @@ public:
     } catch (const std::exception &e) {
       std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
       std::cout << e.what() << "\n";
+      return -1;
     } catch (...) {
       std::cout << "MODULE: Loading FAILED " << lib_path << "\n";
       return -1;
